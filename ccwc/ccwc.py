@@ -14,7 +14,7 @@ parser.add_argument(
     '-m', '--chars', help='print the character count', action='store_true')
 parser.add_argument('-L', '--max-line-length',
                     help='print the maximum display width', action='store_true')
-parser.add_argument('infile', nargs='?', type=argparse.FileType('r'),
+parser.add_argument('infile', nargs='?', type=argparse.FileType('r', encoding="utf16"),
                     default=(None if sys.stdin.isatty() else sys.stdin))
 argslist = parser.parse_args()
 
@@ -25,8 +25,6 @@ output = {}
 def countLines():
     if argslist.lines:
         num_lines = 0
-        if len(raw_text) > 0:
-            num_lines = 1
         for i in raw_text:
             if i == '\n':
                 num_lines += 1
@@ -35,14 +33,16 @@ def countLines():
 
 def countWords():
     if argslist.words:
-        num_characters = 0
+        num_words = 0
         previous = None
+        charset = {''}
         for i in raw_text:
-            if i != ' ' and i != '\n':
-                if previous == ' ' or previous == '\n' or previous == None:
-                    num_characters += 1
+            if i.isspace():
+                if not previous.isspace():
+                    num_words += 1
             previous = i
-        output.update({"words": num_characters})
+        print(charset)
+        output.update({"words": num_words})
 
 
 def countBytes():
@@ -57,12 +57,17 @@ def countChars():
     if argslist.chars:
         num_characters = 0
         for i in raw_text:
-            num_characters += 1
+            if i != ' ' and i != '\n' and i != None:
+                num_characters += 1
         output.update({"chars": len(raw_text)})
 
 
 if argslist.infile:
     raw_text = argslist.infile.read()
+    if not argslist.bytes and not argslist.chars and not argslist.words and not argslist.lines:
+        argslist.bytes = True
+        argslist.words = True
+        argslist.lines = True
     countLines()
     countWords()
     countBytes()
